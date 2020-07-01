@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.5)
 
-project(EezyTuner LANGUAGES CXX)
+project(EezeTuner LANGUAGES CXX)
 
 set(CMAKE_INCLUDE_CURRENT_DIR ON)
 
@@ -8,7 +8,7 @@ set(CMAKE_AUTOUIC ON)
 set(CMAKE_AUTOMOC ON)
 set(CMAKE_AUTORCC ON)
 
-set(CMAKE_CXX_STANDARD 11)
+set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 # QtCreator supports the following variables for Android, which are identical to qmake Android variables.
@@ -24,7 +24,7 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 #    endif()
 #endif()
 
-find_package(Qt5 COMPONENTS Widgets LinguistTools REQUIRED)
+find_package(Qt5 COMPONENTS Widgets Multimedia Qml LinguistTools REQUIRED)
 
 set(TS_FILES EezyTuner_en_US.ts)
 
@@ -42,10 +42,13 @@ else()
     MainWindow.cpp
     MainWindow.h
     MainWindow.ui
+    Recorder.cpp
+    Recorder.h
+    resources.qrc
     ${TS_FILES}
   )
 endif()
 
-target_link_libraries(EezyTuner PRIVATE Qt5::Widgets)
+target_link_libraries(EezyTuner PRIVATE Qt5::Widgets Qt5::Multimedia Qt5::Qml)
 
 qt5_create_translation(QM_FILES ${CMAKE_SOURCE_DIR} ${TS_FILES})
