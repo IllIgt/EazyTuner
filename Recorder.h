@@ -2,7 +2,8 @@
 #define RECORDER_H
 #include <QObject>
 #include <QAudioInput>
-#include <QFile>
+#include <QAudioOutput>
+#include <QBuffer>
 #include <QStringListModel>
 #include <memory>
 
@@ -13,14 +14,18 @@ class Recorder : public QObject
 public:
     Recorder();
     ~Recorder();
-    QFile destinationFile;
-    QAudioInput* audio;
+    QBuffer destinationFile;
+    QIODevice *audioBuffer;
+    QAudioOutput* oAudio;
+    QAudioInput* iAudio;
     QStringListModel *devices() const;
 
 public slots:
     void startRecord();
     void stopRecording();
-    void handleStateChanged(QAudio::State newStat);
+    void handleRecordStateChanged(QAudio::State newStat);
+    void handlePlayStateChanged(QAudio::State newState);
+    void startPlaying();
 private:
     std::unique_ptr<QStringListModel> mDevices;
 };

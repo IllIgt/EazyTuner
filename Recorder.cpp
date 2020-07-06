@@ -23,7 +23,6 @@ Recorder::~Recorder() {
 
 void Recorder::startRecord() {
 
-    destinationFile.setFileName("/tmp/test.raw");
     destinationFile.open( QIODevice::WriteOnly | QIODevice::Truncate );
 
     QAudioFormat format;
@@ -41,11 +40,11 @@ void Recorder::startRecord() {
         format = info.nearestFormat(format);
     }
 
-    audio = new QAudioInput(format, this);
-    connect(audio, SIGNAL(stateChanged(QAudio::State)), this, SLOT(handleStateChanged(QAudio::State)));
+    iAudio = new QAudioInput(format, this);
+    connect(iAudio, SIGNAL(stateChanged(QAudio::State)), this, SLOT(handleRecordStateChanged(QAudio::State)));
 
-    QTimer::singleShot(3000, this, SLOT(stopRecording()));
-    audio->start(&destinationFile);
+    QTimer::singleShot(10000, this, SLOT(stopRecording()));
+    iAudio->start(&destinationFile);
     // Records audio for 3000ms
 }
 
@@ -53,19 +52,44 @@ void Recorder::startRecord() {
 
 void Recorder::stopRecording()
 {
-    audio->stop();
+    iAudio->stop();
     destinationFile.close();
-    delete audio;
+    delete iAudio;
+    startPlaying();
 }
 
-void Recorder::handleStateChanged(QAudio::State newState)
+void Recorder::handlePlayStateChanged(QAudio::State newState)
+{
+    switch (newState) {
+        case QAudio::IdleState:
+            // Finished playing (no more data)
+            oAudio->stop();
+            destinationFile.close();
+            delete oAudio;
+            break;
+
+        case QAudio::StoppedState:
+            // Stopped for other reasons
+            if (oAudio->error() != QAudio::NoError) {
+                // Error handling
+            }
+            break;
+
+        default:
+            // ... other cases as appropriate
+            break;
+    }
+
+}
+
+void Recorder::handleRecordStateChanged(QAudio::State newState)
 {
     switch (newState) {
         case QAudio::StoppedState:
-            if (audio->error() != QAudio::NoError) {
+            if (iAudio->error() != QAudio::NoError) {
                 // Error handling
             } else {
-                // Finished recording
+
             }
             break;
 
@@ -77,6 +101,30 @@ void Recorder::handleStateChanged(QAudio::State newState)
             // ... other cases as appropriate
             break;
     }
+}
+
+void Recorder::startPlaying()
+{
+    destinationFile.open(QIODevice::ReadOnly);
+
+    QAudioFormat format;
+    // Set up the format, eg.
+    format.setSampleRate(8000);
+    format.setChannelCount(1);
+    format.setSampleSize(8);
+    format.setCodec("audio/pcm");
+    format.setByteOrder(QAudioFormat::LittleEndian);
+    format.setSampleType(QAudioFormat::UnSignedInt);
+
+    QAudioDeviceInfo info(QAudioDeviceInfo::defaultOutputDevice());
+    if (!info.isFormatSupported(format)) {
+        qWarning() << "Raw audio format not supported by backend, cannot play audio.";
+        return;
+    }
+
+    oAudio = new QAudioOutput(format, this);
+    connect(oAudio, SIGNAL(stateChanged(QAudio::State)), this, SLOT(handlePlayStateChanged(QAudio::State)));
+    oAudio->start(&destinationFile);
 }
 
 QStringListModel *Recorder::devices() const {
